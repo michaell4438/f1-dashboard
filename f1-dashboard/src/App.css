@@ -24,10 +24,12 @@ p.recommendedGear {
     color: black; 
     font-size: 4rem; 
     text-align: center; 
-    background-color: red; 
     margin-bottom: 0; 
     width: min-content;
+    height: min-content;
     padding: 3px 10px;
+    border-radius: 25px;
+    background: red;
 }
 
 div.recommendedGearOuter {
@@ -46,6 +48,63 @@ p.smallFont {
     font-size: 1.5rem;
 }
 
-.greenText {
-    color: green;
+.positionOuter {
+    display: flex;
+    flex-direction: row;
+    text-align: center;
+}
+
+.shiftLightRect {
+    display: inline-block;
+    width: 7.14vw;
+    height: 3vh;
+    background: red;
+}
+
+.verticalCenter {
+    margin: 0 auto;
+    position: absolute;
+    top: 50%;
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);
+}
+
+.drsIndicatorReady {
+    border-radius: 25px;
+    background: white;
+    color: black;
+    width: 100%;
+    animation: blinker 0.4s infinite step-start;
+}
+
+.drsIndicatorActive {
+    color: white;
+    width: 100%;
+    border-radius: 25px;
+    background: green;
+}
+
+@keyframes blinker {
+    50% {
+      background: green;
+      color: white;
+    }
+}
+
+.drsIndicatorNone {
+    color: gray;
+    width: 100%;
+}
+
+.ersIndicator {
+    width: 100%;
+    color: yellow;
+    border-radius: 25px;
+    border: 2px solid yellow;
+    padding: 20px auto;
+}
+
+p.ersIndicatorOvertake {
+    background: yellow;
+    color: black;
 }
