@@ -1,8 +1,27 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import './App.css'
 import { Container, Row, Col } from 'react-grid-system';
+import useWebSocket, { ReadyState } from 'react-use-websocket';
 
-function Dashboard() {
+function formatTime(timeMs, signed = false, decimalPlaces = 3) {
+    const sign = signed ? timeMs < 0 ? "-" : "+" : "";
+    const time = Math.abs(timeMs);
+    const minutes = Math.floor(time / 60000);
+    const seconds = Math.floor((time % 60000) / 1000);
+    const milliseconds = Math.floor((time % 1000));
+    const padAmount = (seconds > 10 || minutes > 0) ? 2 : 1;
+    return `${sign}${minutes > 0 ? `${minutes}:` : ""}${seconds.toString().padStart(padAmount, '0')}.${milliseconds.toString().padStart(decimalPlaces, '0')}`;
+}
+
+function Dashboard({lapTime, lastLapTime, expectedDelta, position, totalPositions, rpm, speed, speedUnit, gear, recommendedGear, drsState, s1, s2, s3, ersCharge, isOvertake, shiftLights}) {
+    var drsClassName;
+    if (drsState === "Active") {
+        drsClassName = "drsIndicatorActive";
+    } else if (drsState === "Ready") {
+        drsClassName = "drsIndicatorReady";
+    } else {
+        drsClassName = "drsIndicatorNone";
+    }
     return (
         <>
             <Container className={"centered"} style={{ margin: '0px', width: '100%', height: '100%' }} fluid>
@@ -26,49 +45,49 @@ function Dashboard() {
                     <Row align="center" style={{ height: '100%', width: '100%' }}>
                         <Col>
                             <Row style={{ height: '20vh' }}>
-                                <p className={"miscIndicator"}>1:00.000 : 1:30.000</p>
+                                <p className={"miscIndicator"}>{formatTime(lapTime)} : {formatTime(lastLapTime)}</p>
                             </Row>
                             <Row style={{ height: '10.3vh' }}>
-                                <p className={"miscIndicator"} style={{ color: 'green' }}>-1.000</p>
+                                <p className={"miscIndicator"} style={{ color: expectedDelta > 0 ? 'red' : 'green' }}>{formatTime(expectedDelta, true)}</p>
                             </Row>
                             <Row justify="center" style={{ height: '66.6vh' }}>
                                 <div className={"positionOuter"}>
-                                    <p className={"miscIndicator"} style={{ fontSize: '6rem' }}>1 </p>
-                                    <p className={"miscIndicator smallFont"}> /20</p>
+                                    <p className={"miscIndicator"} style={{ fontSize: '6rem' }}>{position}</p>
+                                    <p className={"miscIndicator smallFont"}>/{totalPositions}</p>
                                 </div>
                             </Row>
                         </Col>
                         <Col>
                             <Row style={{ height: '32.3vh' }}>
-                                <p className={"miscIndicator"}>1350 <p className={"smallFont"}>rpm</p></p>
-                                <p className={"miscIndicator"}>150 <p className={"smallFont"}>km/h</p></p>
+                                <p className={"miscIndicator"}>{rpm} <p className={"smallFont"}>rpm</p></p>
+                                <p className={"miscIndicator"}>{speed} <p className={"smallFont"}>{speedUnit}</p></p>
                             </Row>
                             <Row style={{ height: '32.3vh' }}>
-                                <p className={"gearIndicator miscIndicator"}>1</p>
+                                <p className={"gearIndicator miscIndicator"}>{gear}</p>
                             </Row>
                             <Row style={{ height: '32.3vh' }}>
                                 <div className={"miscIndicator recommendedGearOuter"}>
-                                    <p className={"miscIndicator recommendedGear"}>2</p>
+                                    <p className={"miscIndicator recommendedGear"}>{recommendedGear}</p>
                                 </div>
                             </Row>
                         </Col>
                         <Col>
                             <Col style={{ height: '32.2vh' }}>
-                                <p className={"miscIndicator verticalCenter drsIndicatorNone"}> DRS </p>
+                                <p className={`miscIndicator verticalCenter ${drsClassName}`}> DRS </p>
                             </Col>
                             <Col style={{ height: '32.2vh' }}>
                                 <Row>
-                                    <p className={"miscIndicator"}>S1: 0.000</p>
+                                    <p className={"miscIndicator"}>S1: {formatTime(s1)}</p>
                                 </Row>
                                 <Row>
-                                    <p className={"miscIndicator"}>S2: 0.000</p>
+                                    <p className={"miscIndicator"}>S2: {formatTime(s2)}</p>
                                 </Row>
                                 <Row>
-                                    <p className={"miscIndicator"}>S3: 0.000</p>
+                                    <p className={"miscIndicator"}>S3: {formatTime(s3)}</p>
                                 </Row>
                             </Col>
                             <Col style={{ height: '32.2vh' }}>
-                                <p className={"miscIndicator verticalCenter ersIndicator ersIndicatorOvertake"}> 50% </p>
+                                <p className={`miscIndicator verticalCenter ersIndicator ${isOvertake ? ersIndicatorOvertake : ""}`}> {ersCharge}% </p>
                             </Col>
                         </Col>
                     </Row >
@@ -79,9 +98,53 @@ function Dashboard() {
 }
 
 function App() {
+    const [socketUrl, setSocketUrl] = useState(window.location.hostname);
+    const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl);
+
+    const [lapTime, setLapTime] = useState(0);
+    const [lastLapTime, setLastLapTime] = useState(0);
+    const [expectedDelta, setExpectedDelta] = useState(-1000);
+    const [position, setPosition] = useState(1);
+    const [totalPositions, setTotalPositions] = useState(20);
+    const [rpm, setRpm] = useState(0);
+    const [speed, setSpeed] = useState(0);
+    const [speedUnit, setSpeedUnit] = useState("km/h");
+    const [gear, setGear] = useState(0);
+    const [recommendedGear, setRecommendedGear] = useState(0);
+    const [drsState, setDrsState] = useState("None");
+    const [s1, setS1] = useState(0.0);
+    const [s2, setS2] = useState(0.0);
+    const [s3, setS3] = useState(0.0);
+    const [ersCharge, setErsCharge] = useState(0);
+    const [isOvertake, setIsOvertake] = useState(false);
+    const [shiftLights, setShiftLights] = useState(0);
+
+    useEffect(() => {
+        if (lastMessage) {
+            const data = JSON.parse(lastMessage.data);
+            setLapTime(data.lapTime);
+            setLastLapTime(data.lastLapTime);
+            setExpectedDelta(data.expectedDelta);
+            setPosition(data.position);
+            setTotalPositions(data.totalPositions);
+            setRpm(data.rpm);
+            setSpeed(data.speed);
+            setSpeedUnit(data.speedUnit);
+            setGear(data.gear);
+            setRecommendedGear(data.recommendedGear);
+            setDrsState(data.drsState);
+            setS1(data.s1);
+            setS2(data.s2);
+            setS3(data.s3);
+            setErsCharge(data.ersCharge);
+            setIsOvertake(data.isOvertake);
+            setShiftLights(data.shiftLights);
+        }
+    }, [lastMessage]);
+
     return (
         <>
-            <Dashboard />
+            <Dashboard lapTime={lapTime} lastLapTime={lastLapTime} expectedDelta={expectedDelta} position={position} totalPositions={totalPositions} rpm={rpm} speed={speed} speedUnit={speedUnit} gear={gear} recommendedGear={recommendedGear} drsState={drsState} s1={s1} s2={s2} s3={s3} ersCharge={ersCharge} isOvertake={isOvertake} shiftLights={shiftLights} />
         </>
     )
 }
