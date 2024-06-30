@@ -11,5 +11,7 @@ The first run may take a while and internet access is only required for the firs
 Make sure to configure your F1 game to enable telemetry and set the IP address to your computer if
 the computer is not the same as the one running the game.
 
+Once running, the application will give you a link to open on your web browser or on another device on the same network.
+
 ## Screenshot with annotations
 ![Screenshot](media/sc.png)
