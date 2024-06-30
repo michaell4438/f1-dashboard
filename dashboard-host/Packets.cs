@@ -76,9 +76,7 @@ namespace dashboard_host
         public byte m_rainPercentage;
     }
 
-    using System.Runtime.InteropServices;
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PacketSessionData
     {
         public PacketHeader m_header;                   // Header
@@ -454,9 +452,7 @@ namespace dashboard_host
         public CarDamageData[] m_carDamageData;       // Array of CarDamageData structs
     }
 
-    using System.Runtime.InteropServices;
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct LapHistoryData
     {
         public uint m_lapTimeInMS;              // Lap time in milliseconds
@@ -498,9 +494,7 @@ namespace dashboard_host
         public TyreStintHistoryData[] m_tyreStintsHistoryData; // Array of TyreStintHistoryData structs (max 8 stints)
     }
 
-    using System.Runtime.InteropServices;
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct TyreSetData
     {
         public byte m_actualTyreCompound;     // Actual tyre compound used
