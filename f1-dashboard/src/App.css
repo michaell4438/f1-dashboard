@@ -33,7 +33,6 @@ p.recommendedGear {
 }
 
 div.recommendedGearOuter {
-    display: flex;
     justify-content: center;
     width: 100%
 }
@@ -56,7 +55,7 @@ p.smallFont {
 
 .shiftLightRect {
     display: inline-block;
-    width: 7.14vw;
+    width: 5vw;
     height: 3vh;
     background: red;
 }
@@ -74,7 +73,7 @@ p.smallFont {
     background: white;
     color: black;
     width: 100%;
-    animation: blinker 0.4s infinite step-start;
+    animation: blinker 1s infinite step-start;
 }
 
 .drsIndicatorActive {

@@ -1,5 +1,6 @@
 ﻿using dashboard_host;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Net.WebSockets;
@@ -12,7 +13,8 @@ namespace dashboard_host
         private UdpClient udpClient;
         private IPEndPoint remoteEndPoint;
         private const int port = 20777;
-        private GameData gameData = new GameData();
+        private Timer timer;
+        private volatile GameData gameData = new GameData();
         private WebSocketServer webSocketServer;
 
         public UdpListener()
@@ -20,10 +22,18 @@ namespace dashboard_host
             udpClient = new UdpClient(port);
             remoteEndPoint = new IPEndPoint(IPAddress.Any, port);
 
+            webSocketServer = new WebSocketServer("http://localhost:5174/");
         }
 
         public void StartReceiving()
         {
+            var cts = new CancellationTokenSource();
+
+            _ = Task.Run(() => webSocketServer.StartAsync(cts.Token));
+            timer = new Timer(BroadcastGameData, null, 0, 50);
+
+            StartDashboardServer();
+
             while (true)
             {
                 byte[] data = udpClient.Receive(ref remoteEndPoint);
@@ -78,6 +88,34 @@ namespace dashboard_host
             }
         }
 
+        private void StartDashboardServer()
+        {
+            // Run the command "npm run dev -- --host" in the f1-dashboard directory
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                FileName = "cmd",
+                RedirectStandardInput = true,
+                UseShellExecute = false
+            };
+            Process process = new Process
+            {
+                StartInfo = startInfo
+            };
+            process.Start();
+            process.StandardInput.WriteLine("cd f1-dashboard");
+            process.StandardInput.WriteLine("npm run dev -- --host");
+        }
+
+        private void BroadcastGameData(object state)
+        {
+            try
+            {
+                webSocketServer.BroadcastMessageAsync(gameData.ToJsonString()).Wait();
+            }
+            catch (Exception ex)
+            { }
+        }
+
         private T ByteArrayToStructure<T>(byte[] bytes) where T : struct
         {
             GCHandle handle = GCHandle.Alloc(bytes, GCHandleType.Pinned);
@@ -102,9 +140,9 @@ namespace dashboard_host
             gameData.lapTime = (int)lapData.m_lapData[playerIndex].m_currentLapTimeInMS;
             gameData.lastLapTime = (int)lapData.m_lapData[playerIndex].m_lastLapTimeInMS;
             gameData.s1 = (int)lapData.m_lapData[playerIndex].m_sector1TimeInMS;
-            gameData.s2 = Math.Max((int)lapData.m_lapData[playerIndex].m_sector2TimeInMS - gameData.s1, 0);
-            gameData.s3 = Math.Max((int)lapData.m_lapData[playerIndex].m_currentLapTimeInMS - gameData.s1 - gameData.s2, 0);
+            gameData.s2 = (int)lapData.m_lapData[playerIndex].m_sector2TimeInMS;
             gameData.currentLap = (int)lapData.m_lapData[playerIndex].m_currentLapNum;
+            gameData.position = (int)lapData.m_lapData[playerIndex].m_carPosition;
         }
 
         private void HandleCarTelemetryData(PacketCarTelemetryData carTelemetryData)
@@ -112,6 +150,10 @@ namespace dashboard_host
             int playerIndex = GetPlayerIndex(carTelemetryData.m_header);
             gameData.rpm = carTelemetryData.m_carTelemetryData[playerIndex].m_engineRPM;
             gameData.speed = carTelemetryData.m_carTelemetryData[playerIndex].m_speed;
+            if (gameData.speedUnit == "mph")
+            {
+                gameData.speed = (int)(gameData.speed * 0.621371);
+            }
             gameData.gear = carTelemetryData.m_carTelemetryData[playerIndex].m_gear;
             if (carTelemetryData.m_carTelemetryData[playerIndex].m_drs == 1)
             {
@@ -122,7 +164,7 @@ namespace dashboard_host
                 gameData.drsState = "None";
             }
             gameData.recommendedGear = carTelemetryData.m_suggestedGear;
-            gameData.shiftLights = carTelemetryData.m_carTelemetryData[playerIndex].m_revLightsBitValue;
+            gameData.shiftLights = carTelemetryData.m_carTelemetryData[playerIndex].m_revLightsPercent;
         }
 
         private void HandleCarStatusData(PacketCarStatusData carStatusData)
@@ -142,7 +184,6 @@ namespace dashboard_host
 
         private void HandleParticipantsData(PacketParticipantsData participantsData)
         {
-            gameData.position = participantsData.m_participants[GetPlayerIndex(participantsData.m_header)].m_raceNumber;
             gameData.totalPositions = participantsData.m_numActiveCars;
         }
     }

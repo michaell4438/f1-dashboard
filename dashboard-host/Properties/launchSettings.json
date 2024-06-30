@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "dashboard-host": {
+      "commandName": "Project",
+      "workingDirectory": "C:\\Users\\micha\\source\\repos\\f1-dashboard"
+    }
+  }
+}
