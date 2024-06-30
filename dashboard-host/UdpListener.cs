@@ -2,6 +2,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Net.WebSockets;
 using System.Runtime.InteropServices;
 
 namespace dashboard_host
@@ -12,11 +13,13 @@ namespace dashboard_host
         private IPEndPoint remoteEndPoint;
         private const int port = 20777;
         private GameData gameData = new GameData();
+        private WebSocketServer webSocketServer;
 
         public UdpListener()
         {
             udpClient = new UdpClient(port);
             remoteEndPoint = new IPEndPoint(IPAddress.Any, port);
+
         }
 
         public void StartReceiving()
@@ -33,6 +36,7 @@ namespace dashboard_host
                         break;
                     case 1:
                         PacketSessionData sessionData = ByteArrayToStructure<PacketSessionData>(data);
+                        HandleSessionData(sessionData);
                         break;
                     case 2:
                         PacketLapData lapData = ByteArrayToStructure<PacketLapData>(data);
@@ -40,6 +44,7 @@ namespace dashboard_host
                         break;
                     case 4:
                         PacketParticipantsData participantsData = ByteArrayToStructure<PacketParticipantsData>(data);
+                        HandleParticipantsData(participantsData);
                         break;
                     case 5:
                         PacketCarSetupData carSetupData = ByteArrayToStructure<PacketCarSetupData>(data);
@@ -127,6 +132,18 @@ namespace dashboard_host
             gameData.isOvertake = carStatusData.m_carStatusData[playerIndex].m_ersDeployMode == 3;
             if (gameData.drsState != "Active" && carStatusData.m_carStatusData[playerIndex].m_drsActivationDistance != 0) 
                 gameData.drsState = "" + carStatusData.m_carStatusData[playerIndex].m_drsActivationDistance;
+        }
+
+        private void HandleSessionData(PacketSessionData sessionData)
+        {
+            gameData.totalLaps = (int)sessionData.m_totalLaps;
+            gameData.speedUnit = sessionData.m_speedUnitsLeadPlayer == 0 ? "mph" : "km/h";
+        }
+
+        private void HandleParticipantsData(PacketParticipantsData participantsData)
+        {
+            gameData.position = participantsData.m_participants[GetPlayerIndex(participantsData.m_header)].m_raceNumber;
+            gameData.totalPositions = participantsData.m_numActiveCars;
         }
     }
 }

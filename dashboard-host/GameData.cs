@@ -18,6 +18,7 @@ namespace dashboard_host
         public int totalLaps { get; set; }
         public int rpm { get; set; }
         public int speed { get; set; }
+        public string speedUnit { get; set; }
         public int gear { get; set; }
         public int recommendedGear { get; set; }
         public string drsState { get; set; }
@@ -26,6 +27,6 @@ namespace dashboard_host
         public int s3 { get; set; }
         public decimal ersCharge { get; set; }
         public bool isOvertake { get; set; }
-        public int shiftLights { get; set; }
+        public long shiftLights { get; set; }
     }
 }
