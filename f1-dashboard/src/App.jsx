@@ -17,10 +17,10 @@ function Dashboard({lapTime, lastLapTime, expectedDelta, position, totalPosition
     var drsClassName;
     if (drsState === "Active") {
         drsClassName = "drsIndicatorActive";
-    } else if (drsState === "Ready") {
-        drsClassName = "drsIndicatorReady";
-    } else {
+    } else if (drsState === "None") {
         drsClassName = "drsIndicatorNone";
+    } else {
+        drsClassName = "drsIndicatorReady";
     }
     return (
         <>
@@ -73,7 +73,7 @@ function Dashboard({lapTime, lastLapTime, expectedDelta, position, totalPosition
                         </Col>
                         <Col>
                             <Col style={{ height: '32.2vh' }}>
-                                <p className={`miscIndicator verticalCenter ${drsClassName}`}> DRS </p>
+                                <p className={`miscIndicator verticalCenter ${drsClassName}`}> DRS {drsClassName == "drsIndicatorReady" ? `${drsState}m` : ""} </p>
                             </Col>
                             <Col style={{ height: '32.2vh' }}>
                                 <Row>

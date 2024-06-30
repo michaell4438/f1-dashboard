@@ -11,6 +11,7 @@ namespace dashboard_host
         private UdpClient udpClient;
         private IPEndPoint remoteEndPoint;
         private const int port = 20777;
+        private GameData gameData = new GameData();
 
         public UdpListener()
         {
@@ -28,46 +29,43 @@ namespace dashboard_host
                 switch (header.m_packetId)
                 {
                     case 0:
-                        Console.WriteLine("Motion packet");
+                        PacketMotionData motionData = ByteArrayToStructure<PacketMotionData>(data);
                         break;
                     case 1:
-                        Console.WriteLine("Session packet");
+                        PacketSessionData sessionData = ByteArrayToStructure<PacketSessionData>(data);
                         break;
                     case 2:
-                        Console.WriteLine("Lap packet");
-                        break;
-                    case 3:
-                        Console.WriteLine("Event packet");
+                        PacketLapData lapData = ByteArrayToStructure<PacketLapData>(data);
+                        HandleLapData(lapData);
                         break;
                     case 4:
-                        Console.WriteLine("Participants packet");
+                        PacketParticipantsData participantsData = ByteArrayToStructure<PacketParticipantsData>(data);
                         break;
                     case 5:
-                        Console.WriteLine("Car set ups packet");
+                        PacketCarSetupData carSetupData = ByteArrayToStructure<PacketCarSetupData>(data);
                         break;
                     case 6:
-                        Console.WriteLine("Car telemetry packet");
+                        PacketCarTelemetryData carTelemetryData = ByteArrayToStructure<PacketCarTelemetryData>(data);
+                        HandleCarTelemetryData(carTelemetryData);
                         break;
                     case 7:
-                        Console.WriteLine("Car status packet");
+                        PacketCarStatusData carStatusData = ByteArrayToStructure<PacketCarStatusData>(data);
+                        HandleCarStatusData(carStatusData);
                         break;
                     case 8:
-                        Console.WriteLine("Final classification packet");
+                        PacketFinalClassificationData finalClassificationData = ByteArrayToStructure<PacketFinalClassificationData>(data);
                         break;
                     case 9:
-                        Console.WriteLine("Lobby info packet");
+                        PacketLobbyInfoData lobbyInfoData = ByteArrayToStructure<PacketLobbyInfoData>(data);
                         break;
                     case 10:
-                        Console.WriteLine("Car damage packet");
+                        PacketCarDamageData carDamageData = ByteArrayToStructure<PacketCarDamageData>(data);
                         break;
                     case 11:
-                        Console.WriteLine("Session history packet");
+                        PacketSessionHistoryData sessionHistoryData = ByteArrayToStructure<PacketSessionHistoryData>(data);
                         break;
                     case 12:
-                        Console.WriteLine("Tire history packet");
-                        break;
-                    case 13:
-                        Console.WriteLine("Motion ex packet");
+                        PacketTyreSetsData tyreSetsData = ByteArrayToStructure<PacketTyreSetsData>(data);
                         break;
                     default:
                         break;
@@ -86,6 +84,49 @@ namespace dashboard_host
             {
                 handle.Free();
             }
+        }
+
+        private int GetPlayerIndex(PacketHeader header)
+        {
+            return header.m_playerCarIndex;
+        }
+
+        private void HandleLapData(PacketLapData lapData)
+        {
+            int playerIndex = GetPlayerIndex(lapData.m_header);
+            gameData.lapTime = (int)lapData.m_lapData[playerIndex].m_currentLapTimeInMS;
+            gameData.lastLapTime = (int)lapData.m_lapData[playerIndex].m_lastLapTimeInMS;
+            gameData.s1 = (int)lapData.m_lapData[playerIndex].m_sector1TimeInMS;
+            gameData.s2 = Math.Max((int)lapData.m_lapData[playerIndex].m_sector2TimeInMS - gameData.s1, 0);
+            gameData.s3 = Math.Max((int)lapData.m_lapData[playerIndex].m_currentLapTimeInMS - gameData.s1 - gameData.s2, 0);
+            gameData.currentLap = (int)lapData.m_lapData[playerIndex].m_currentLapNum;
+        }
+
+        private void HandleCarTelemetryData(PacketCarTelemetryData carTelemetryData)
+        {
+            int playerIndex = GetPlayerIndex(carTelemetryData.m_header);
+            gameData.rpm = carTelemetryData.m_carTelemetryData[playerIndex].m_engineRPM;
+            gameData.speed = carTelemetryData.m_carTelemetryData[playerIndex].m_speed;
+            gameData.gear = carTelemetryData.m_carTelemetryData[playerIndex].m_gear;
+            if (carTelemetryData.m_carTelemetryData[playerIndex].m_drs == 1)
+            {
+                gameData.drsState = "Active";
+            }
+            else if (gameData.drsState == "Active" && carTelemetryData.m_carTelemetryData[playerIndex].m_drs == 0)
+            {
+                gameData.drsState = "None";
+            }
+            gameData.recommendedGear = carTelemetryData.m_suggestedGear;
+            gameData.shiftLights = carTelemetryData.m_carTelemetryData[playerIndex].m_revLightsBitValue;
+        }
+
+        private void HandleCarStatusData(PacketCarStatusData carStatusData)
+        {
+            int playerIndex = GetPlayerIndex(carStatusData.m_header);
+            gameData.ersCharge = (decimal)carStatusData.m_carStatusData[playerIndex].m_ersStoreEnergy;
+            gameData.isOvertake = carStatusData.m_carStatusData[playerIndex].m_ersDeployMode == 3;
+            if (gameData.drsState != "Active" && carStatusData.m_carStatusData[playerIndex].m_drsActivationDistance != 0) 
+                gameData.drsState = "" + carStatusData.m_carStatusData[playerIndex].m_drsActivationDistance;
         }
     }
 }
