@@ -5,6 +5,8 @@ VisualStudioVersion = 17.10.34928.147
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "f1-dashboard", "f1-dashboard\f1-dashboard.esproj", "{4D7D331C-33A0-4503-A11D-9A5DB4D9A723}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dashboard-host", "dashboard-host\dashboard-host.csproj", "{0A249070-A415-40AF-B663-A0E1347DA190}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,6 +19,10 @@ Global
 		{4D7D331C-33A0-4503-A11D-9A5DB4D9A723}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4D7D331C-33A0-4503-A11D-9A5DB4D9A723}.Release|Any CPU.Build.0 = Release|Any CPU
 		{4D7D331C-33A0-4503-A11D-9A5DB4D9A723}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{0A249070-A415-40AF-B663-A0E1347DA190}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A249070-A415-40AF-B663-A0E1347DA190}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A249070-A415-40AF-B663-A0E1347DA190}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A249070-A415-40AF-B663-A0E1347DA190}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
